@@ -1,0 +1,36 @@
+[package]
+name = "ipfs-oxidation"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ipfs-embed = "0.26.0"
+futures = "0.3.25"
+async-std = "1.12.0"
+libp2p-bitswap = "0.25.0"
+clap = {version="4.0.29", features=["cargo"]}
+libp2p-tcp = "0.38.0"
+libipld = "0.15.0"
+ipfs-sqlite-block-store = "0.13.0"
+void = "1.0.2"
+
+[dependencies.libp2p]
+version = "0.50.0"
+features = [
+    "async-std",
+    "dns",
+    "gossipsub",
+    "identify",
+    "kad",
+    "mdns",
+    "mplex",
+    "noise",
+    "ping",
+    "pnet",
+    "tcp",
+    "yamux",
+    "rendezvous",
+    "relay",
+]
