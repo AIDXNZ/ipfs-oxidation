@@ -3,8 +3,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 use async_std::task::block_on;
+use fnv::FnvHashMap;
+use ipfs_embed::Block;
+use ipfs_embed::Cid;
 use ipfs_embed::DefaultParams;
-use libipld::Cid;
 use libipld::IpldCodec;
 use libp2p::Multiaddr;
 use libp2p::Swarm;
@@ -70,27 +72,39 @@ impl StoreParams for Sp {
     type Codecs = IpldCodec;
     const MAX_BLOCK_SIZE: usize = 1024 * 1024 * 4;
 }
-struct S;
+
+#[derive(Debug, Clone, Default)]
+struct S(FnvHashMap<Cid, Vec<u8>>);
 
 impl BitswapStore for S {
     type Params = ipfs_embed::DefaultParams;
 
-    fn contains(&mut self, cid: &ipfs_embed::Cid) -> libipld::Result<bool> {
-        todo!()
+    fn contains(&mut self, cid: &Cid) -> libipld::Result<bool> {
+        Ok(self.0.contains_key(&cid))
     }
 
-    fn get(&mut self, cid: &ipfs_embed::Cid) -> libipld::Result<Option<Vec<u8>>> {
-        todo!()
+    fn get(&mut self, cid: &Cid) -> libipld::Result<Option<Vec<u8>>> {
+        Ok(self.0.get(cid).cloned())
     }
 
     fn insert(&mut self, block: &ipfs_embed::Block<Self::Params>) -> libipld::Result<()> {
-        let data = block.data();
-        println!("Inserting");
-        Ok(())
+        self.0
+                .insert(*block.cid(), block.data().to_vec());
+            Ok(())
     }
 
     fn missing_blocks(&mut self, cid: &ipfs_embed::Cid) -> libipld::Result<Vec<ipfs_embed::Cid>> {
-        todo!()
+        let mut stack = vec![*cid];
+        let mut missing = vec![];
+        while let Some(cid) = stack.pop() {
+            if let Some(data) = self.get(&cid)? {
+                let block = Block::<Self::Params>::new_unchecked(cid, data);
+                block.references(&mut stack)?;
+            } else {
+                missing.push(cid);
+            }
+        }
+        Ok(missing)
     }
 }
 
@@ -123,7 +137,9 @@ async fn async_main() {
 
     let transport = build_transport(local_key.clone());
    
-    let store  = S;
+    let mut store = S::default();
+
+    
 
     let bs = Bitswap::<DefaultParams>::new(BitswapConfig::default(), store);
 
@@ -140,16 +156,17 @@ async fn async_main() {
         )
     };
     
-    let cid  = "QmQbKSZKnDeR4bJT65hN9cjbJspheDHt9tZDqUMv7NBpMt".parse().unwrap();
+    let cid: Cid  = "QmQbKSZKnDeR4bJT65hN9cjbJspheDHt9tZDqUMv7NBpMt".parse().unwrap();
     let peer: PeerId = "12D3KooWScdNmkkfXipjs6PHwFZAzMxce6Qhgn7WtFDNorrq2rcH".parse().unwrap();
     let addr: Multiaddr = "/ip4/192.168.1.24/tcp/4001".parse().unwrap();
     swarm.dial(addr.clone()).unwrap();
 
     let _ = swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse().unwrap());
     let peers = vec![peer];
-
+    //let missing = store.missing_blocks(&cid).unwrap();
     swarm.behaviour_mut().bitswap.add_address(&peer, addr);
-    swarm.behaviour_mut().bitswap.get(cid, peers.into_iter());
+    //let updates = swarm.behaviour_mut().bitswap.sync(cid, peers, missing.into_iter());
+    
 
     
 

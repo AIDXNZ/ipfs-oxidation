@@ -1556,12 +1556,15 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "clap 4.0.29",
+ "fnv",
  "futures",
  "ipfs-embed",
  "ipfs-sqlite-block-store",
  "libipld 0.15.0",
  "libp2p",
  "libp2p-bitswap",
+ "libp2p-dcutr",
+ "libp2p-relay",
  "libp2p-tcp",
  "void",
 ]
@@ -1882,6 +1885,28 @@ dependencies = [
  "unsigned-varint",
  "void",
  "zeroize",
+]
+
+[[package]]
+name = "libp2p-dcutr"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b047ae2856cb46adaed6344634d4bb93b9a917fc300358cd33284cdb4c8132c6"
+dependencies = [
+ "asynchronous-codec",
+ "bytes",
+ "either",
+ "futures",
+ "futures-timer",
+ "instant",
+ "libp2p-core",
+ "libp2p-swarm",
+ "log",
+ "prost",
+ "prost-build",
+ "prost-codec",
+ "thiserror",
+ "void",
 ]
 
 [[package]]
