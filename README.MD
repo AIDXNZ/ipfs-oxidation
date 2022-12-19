@@ -2,6 +2,9 @@
 
 # Usage 
 
+Goals
+- Check if ipfs is running and what agent 
+
 Start the server
 ```cargo run --example server -- --relay "/ip4/0.0.0.0/tcp/0"```
 
