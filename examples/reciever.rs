@@ -150,10 +150,13 @@ async fn async_main() {
 
 
     let matches = command!().
-    arg(
-        arg!(
+    args(
+        [arg!(
             --relay <str> "relay"
-        )
+        ),
+        arg!(--secret <str> "Secret Used for Auth")
+        
+        ]
     ).get_matches();
     
 

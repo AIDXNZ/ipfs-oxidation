@@ -32,6 +32,7 @@ use libp2p::kad::KademliaEvent;
 use libp2p::kad::PutRecordOk;
 use libp2p::kad::QueryResult;
 use libp2p::noise;
+use libp2p::noise::SecretKey;
 use libp2p::relay::v2::{relay, client};
 use libp2p::swarm::NetworkBehaviour;
 use libp2p::swarm::SwarmEvent;
@@ -150,10 +151,14 @@ async fn async_main() {
 
 
     let matches = command!().
-    arg(
+    args(
+        [arg!(
+            --relay <str> "Relay Address"
+        ),
+        arg!(--file <str> "File Path"),
         arg!(
-            --addr <str> "Destination Address"
-        )
+            --secret <str> "Secret Key"
+        )]
     ).get_matches();
     
 
@@ -209,7 +214,10 @@ async fn async_main() {
     };
 
     
-    let addr: Multiaddr = matches.get_one::<String>("addr").unwrap().parse().unwrap();
+    let addr: Multiaddr = matches.get_one::<String>("relay").unwrap().parse().unwrap();
+    
+    let secret = PeerId::random().to_string();
+    println!("Secret: {:?}", secret);
 
 
     // Listen on the given relay address
@@ -247,12 +255,11 @@ async fn async_main() {
                         message_id: id,
                         message,
                     })) => {
-                        println!(
-                            "Got message: {} with id: {} from peer: {:?}",
-                            String::from_utf8_lossy(&message.data),
-                            id,
-                            peer_id
-                        )
+                        let msg = String::from_utf8_lossy(&message.data);
+                        if msg == secret {
+                            swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
+                            swarm.behaviour_mut().gossipsub.publish(topic.clone(), "Begin Transfer...").unwrap();
+                        }
                     }
                     _ => (),
                 }

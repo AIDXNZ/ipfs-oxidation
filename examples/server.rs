@@ -12,7 +12,7 @@ use ipfs_embed::PeerRecord;
 use ipfs_embed::Record;
 use libipld::Cid;
 use libipld::IpldCodec;
-use libp2p::Multiaddr;
+use libp2p::{Multiaddr, mdns};
 use libp2p::Swarm;
 use libp2p::Transport;
 use libp2p::futures::StreamExt;
@@ -106,6 +106,7 @@ struct MyBehaviour {
         //autonat: autonat::Behaviour,
         relay: relay::Relay,
         gossipsub: Gossipsub,
+        mdns: mdns::async_io::Behaviour,
 
 }
 
@@ -114,8 +115,15 @@ enum MyBehaviourEvent {
     Kademlia(KademliaEvent),
     Identify(identify::Event),
     Relay(relay::Event),
-    Gossipsub(GossipsubEvent)
+    Gossipsub(GossipsubEvent),
+    Mdns(mdns::Event)
     //Autonat(autonat::Event),
+}
+
+impl From<mdns::Event> for MyBehaviourEvent {
+    fn from(value: mdns::Event) -> Self {
+        MyBehaviourEvent::Mdns(value)
+    }
 }
 
 impl From<GossipsubEvent> for MyBehaviourEvent {
@@ -198,7 +206,8 @@ async fn async_main() {
         kad:  kademlia,
         identify: identify::Behaviour::new(identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.clone().public())),
         relay: relay::Relay::new(local_peer_id, relay::Config::default()),
-        gossipsub: gossipsub,
+        gossipsub,
+        mdns: mdns::Behaviour::new(mdns::Config::default()).unwrap(),
     };
     
 
@@ -287,7 +296,12 @@ async fn async_main() {
                     //SwarmEvent::Behaviour(MyBehaviourEvent::Identify(identify::Event::Received {info, ..})) => {
                     //    println!("{:?}", info);
                     //} 
-                    
+                    SwarmEvent::Behaviour(MyBehaviourEvent::Mdns(mdns::Event::Discovered(peers))) => {
+                        for (peer, addr) in peers {
+                            print!("{:?}", peer);
+                            //logger::send_event(LogEntry { msg: format!("{}, {:?}", peer, addr) ,tag: "Discovered".to_string() });
+                        }
+                    }
                     SwarmEvent::NewListenAddr {address, ..} => {
                         println!(
                             "Peer that act as Relay can access on: `{}/p2p/{}/p2p-circuit`",
