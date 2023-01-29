@@ -207,7 +207,7 @@ async fn async_main() {
         identify: identify::Behaviour::new(identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.clone().public())),
         relay: relay::Relay::new(local_peer_id, relay::Config::default()),
         gossipsub,
-        mdns: mdns::Behaviour::new(mdns::Config::default()).unwrap(),
+        mdns: mdns::async_io::Behaviour::new(mdns::Config::default()).unwrap(),
     };
     
 
